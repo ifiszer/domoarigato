@@ -5,6 +5,9 @@ var neo4j = require('./neo4j/Neo4JManager').driver;
 var app = express();
 app.use(bodyParser.json());
 
+/* SAMPLE REQUEST
+{"name":"testSong2","track":2,"genre":["rock","pop"],"artist":"testArtist","album":"testAlbum"}
+*/
 
 app.post('/music/song', function (req, res) {
 	var session = neo4j.session();
