@@ -11,6 +11,8 @@
   "dependencies": {
     "body-parser": "^1.16.0",
     "express": "^4.14.0",
-    "neo4j-driver": "^1.0.4"
+    "music-tag": "github:gnavalesi/music-tag#9e34d5de4f911848cafddba7ee35163e709b51fc",
+    "neo4j-driver": "^1.0.4",
+    "q": "^1.5.0"
   }
 }

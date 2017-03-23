@@ -9,7 +9,7 @@ var music = require("./music/music.js");
 /* SAMPLE REQUEST
 {"name":"testSong2","track":2,"genre":["rock","pop"],"artist":"testArtist","album":"testAlbum"}
 */
-app.post('/music/song', [music.insertSong]);	
+app.post('/music/indexPath', [music.indexPath]);	
 
 app.get('/music/artist/(:artistFilter)', [music.getArtists]);
 
