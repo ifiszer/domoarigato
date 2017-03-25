@@ -16,10 +16,15 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 
 		id3.read(req.body.path).then(function(files) {
 			
-			Q.fcall(function(){
-				_.each(files, function(file, index, list){
-					insertSong(file, tx);
-				})
+			// Retorno una promise que espera a que se ejecuten todos los insertSong
+			return Q.fcall(function(){
+				// Mapeo el array de files a un array de promises
+				var promises = _.map(files, function(file, index, list){
+					return insertSong(file, tx);
+				});
+
+				// Retorno una promise que espera a todas las promises de insertSong
+				return Q.all(promises);
 			}).then(function(res){
 				
 			}).catch(function(err) {
@@ -37,7 +42,7 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 	var insertSong = function(ReadResult, tx){
 		var session = neo4j.session();
 		var tx = session.beginTransaction();
-		 tx.run( `MERGE (artist:Artist{name:{data.artist}})
+		 return tx.run( `MERGE (artist:Artist{name:{data.artist}})
 		  		 MERGE (album:Album {name: {data.album}})<-[:Composed_by]-(artist)
 		  		 CREATE (:Song {path:{path}, title: {data.title}, disc:{data.part_of_a_set}, track: {data.track_number}, genre: {data.genre}})<-[:Contains]-(album)`
 		  	   , ReadResult)
