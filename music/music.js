@@ -5,27 +5,26 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 
 (function () {
 	var indexPath = function (req, res) {
-		id3.read(req.body.path).then(function(files){
-			var session = neo4j.session();
-			var tx = session.beginTransaction();
-			return Q.fcall(function(){
-				var promises = _.map(files, function(file, index, list){
-					return insertSong(file, tx);
-				});
-				return Q.all(promises);
-			}).then(function(res){
-				tx.commit();
-			}).catch(function(err) {
-				tx.rollback();
-				throw err;
-			}).finally(function(res){
-				session.close();
-			})
-		}).then(function(result) {
-			res.status(200).send(result);			
-		}).catch(function(err) {
-			res.status(500).send(err);
-		}).done();
+		processAndRespond(req, res, function(){
+			return id3.read(req.body.path).then(function(files){
+				var session = neo4j.session();
+				var tx = session.beginTransaction();
+				return Q.fcall(function(){
+					var promises = _.map(files, function(file, index, list){
+						return insertSong(file, tx);
+					});
+					return Q.all(promises);
+				}).then(function(res){
+					tx.commit();
+					return "Succesfully Indexed";
+				}).catch(function(err) {
+					tx.rollback();
+					throw err;
+				}).finally(function(res){
+					session.close();
+				})
+			});
+		});
 	}
 
 	var insertSong = function(ReadResult, tx){
@@ -36,7 +35,7 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 	}
 
 	var getAllArtists = function (req, res) {
-		Q.fcall(function(){
+		processAndRespond(req, res, function(){
 			var session = neo4j.session();
 			return Q.fcall(function(){
 				var promise = session.run( `MATCH (artist:Artist) 
@@ -47,15 +46,11 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 			}).finally(function(res){
 				session.close();
 			})
-		}).then(function(result) {		
-		    res.status(200).json( result );
-		}).catch(function(err){
-		  	res.status(500).send(err);
 		});
 	}
 
 	var getFilteredArtists = function (req, res) {
-		Q.fcall(function(){
+		processAndRespond(req, res, function(){
 			var session = neo4j.session();
 			return Q.fcall(function(){
 				var promise = session.run( `MATCH (artist:Artist) 
@@ -67,15 +62,11 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 			}).finally(function(res){
 				session.close();
 			})
-		}).then(function(result) {		
-		    res.status(200).json( result );
-		}).catch(function(err){
-		  	res.status(500).send(err);
 		});
 	}
 
 	var getAlbumsByArtist = function (req, res) {
-		Q.fcall(function(){
+		processAndRespond(req, res, function(){
 			var session = neo4j.session();
 			return Q.fcall(function(){
 				var promise = session.run( `MATCH (artist:Artist{name:$artistName})
@@ -87,15 +78,11 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 			}).finally(function(res){
 				session.close();
 			})
-		}).then(function(result) {		
-		    res.status(200).json( result );
-		}).catch(function(err){
-		  	res.status(500).send(err);
 		});
 	}
 
 	var getSongsByAlbum = function (req, res) {
-		Q.fcall(function(){
+		processAndRespond(req, res, function(){
 			var session = neo4j.session();
 			return Q.fcall(function(){
 				var promise = session.run( `MATCH (artist:Artist{name:$artistName})
@@ -109,27 +96,13 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 			}).finally(function(res){
 				session.close();
 			})
-		}).then(function(result) {		
-		    res.status(200).json( result );
-		}).catch(function(err){
-		  	res.status(500).send(err);
-		});
+		});		
 	}
 
-	var getSongById = function (req, res) {
-		Q.fcall(function(){
-			var session = neo4j.session();
-			return Q.fcall(function(){
-				var promise = session.run( `MATCH (song:Song) WHERE ID(s)=$id RETURN song`,
-										 {id:Number(req.params.id)});
-				return Q.when(promise);
-			}).then(function(result) {
-				return result.records.map((record)=>{return record.get("song").properties});		
-			}).finally(function(res){
-				session.close();
-			})
-		}).then(function(result) {		
-		    res.status(200).json( result );
+	var processAndRespond = function(req, res, f){
+		Q.fcall(f)
+		.then(function(result) {		
+		    res.status(200).json(result);
 		}).catch(function(err){
 		  	res.status(500).send(err);
 		});
@@ -140,7 +113,6 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 		getAllArtists: getAllArtists,
 		getFilteredArtists:getFilteredArtists,
 		getAlbumsByArtist: getAlbumsByArtist,
-		getSongsByAlbum: getSongsByAlbum,
-		getSongById: getSongById
+		getSongsByAlbum: getSongsByAlbum
 	};
 }());
