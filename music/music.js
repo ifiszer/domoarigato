@@ -5,115 +5,122 @@ var neo4j = require('../neo4j/Neo4JManager').driver,
 
 (function () {
 	var indexPath = function (req, res) {
-		var session = neo4j.session();	
-		var tx = session.beginTransaction();	
-		tx.run( "Create (algo:Algo{dato:3})")
-		.then(function(result){
-			tx.commit();
-			session.close();
-		});
-		
-
+		var session;
+		var tx;
 		id3.read(req.body.path).then(function(files) {
-			
-			// Retorno una promise que espera a que se ejecuten todos los insertSong
+			session = neo4j.session();	
+			tx = session.beginTransaction();
+			return files;
+		}).then(function(files){
 			return Q.fcall(function(){
-				// Mapeo el array de files a un array de promises
 				var promises = _.map(files, function(file, index, list){
 					return insertSong(file, tx);
 				});
-
-				// Retorno una promise que espera a todas las promises de insertSong
 				return Q.all(promises);
-			}).then(function(res){
-				
-			}).catch(function(err) {
-				console.log(err);
-				throw err;
-			}).done();
+			})
+		}).then(function(res){
+			tx.commit();
 		}).then(function(result) {
 			res.status(200).send();			
 		}).catch(function(err) {
-			console.log(err);
-			res.status(500).send( err.Error );
+			tx.rollback();
+			res.status(500).send(""+err);
+		}).finally(function(res){
+			session.close();
 		}).done();
 	}
 
 	var insertSong = function(ReadResult, tx){
-		var session = neo4j.session();
-		var tx = session.beginTransaction();
-		 return tx.run( `MERGE (artist:Artist{name:{data.artist}})
-		  		 MERGE (album:Album {name: {data.album}})<-[:Composed_by]-(artist)
-		  		 CREATE (:Song {path:{path}, title: {data.title}, disc:{data.part_of_a_set}, track: {data.track_number}, genre: {data.genre}})<-[:Contains]-(album)`
-		  	   , ReadResult)
-		 .then(function(result){
-		 	tx.commit();
-		 	session.close();
-		 });	
+		return tx.run( `MERGE (artist:Artist{name:$data.band})
+		  		 MERGE (album:Album {name: $data.album})<-[:Composed_by]-(artist)
+		  		 CREATE (:Song {path:$path, title: $data.title, disc:$data.part_of_a_set, track: $data.track_number, genre: $data.genre})<-[:Contains]-(album)`
+		  	   , ReadResult);	
 	}
 
-	var getArtists = function (req, res) {
+	var getAllArtists = function (req, res) {
 		var session = neo4j.session();
-		return session.run( `MATCH (a:Artist) 
-							 WHERE a.name =~ "(?i).*{artistFilter}.*"
-							 RETURN a.name AS artistName`, {artistFilter:req.params.artistFilter})
-		   .then( function(result) {
-		    res.status(200).json( result.records.map((record)=>{return record.get("artistName")}) );
-		    session.close();    	   
-		  })
-		  .catch(function(err){
-		  	res.status(500).send( err );
-		  	session.close();
-		  })
+		Q.fcall(function(){
+				var promise = session.run( `MATCH (artist:Artist) 
+							  RETURN artist AS artist`);
+				return Q.when(promise);
+		}).then(function(result) {		
+		    res.status(200).json( result.records.map((record)=>{return record.get("artist").properties}) );
+		}).catch(function(err){
+		  	res.status(500).send(""+err);
+		}).finally(function(res){
+			session.close();
+		});
+	}
+
+	var getFilteredArtists = function (req, res) {
+		var session = neo4j.session();
+		Q.fcall(function(){
+				var promise = session.run( `MATCH (artist:Artist) 
+							  WHERE LOWER(artist.name) CONTAINS LOWER($artistFilter)
+							  RETURN artist AS artist`, {artistFilter:req.params.artistFilter});
+				return Q.when(promise);
+		}).then(function(result) {		
+		    res.status(200).json( result.records.map((record)=>{return record.get("artist").properties}) );
+		}).catch(function(err){
+		  	res.status(500).send(""+err);
+		}).finally(function(res){
+			session.close();
+		});
 	}
 
 	var getAlbumsByArtist = function (req, res) {
 		var session = neo4j.session();
-		return session.run( `MATCH (artist:Artist{name:{artistName}})
-							 MATCH (album:Album)<-[:Composed_by]-(artist) 
-							 RETURN album.name AS albumName`, {artistName:req.params.artistName})
-		   .then( function(result) {
-		    res.status(200).json( result.records.map((record)=>{return record.get("albumName")}) );
-		    session.close();    	   
-		  })
-		  .catch(function(err){
-		  	res.status(500).send( err );
-		  	session.close();
-		  })
+		Q.fcall(function(){
+				var promise = session.run( `MATCH (artist:Artist{name:$artistName})
+											MATCH (album:Album)<-[:Composed_by]-(artist) 
+											RETURN album AS album`, {artistName:req.params.artistName});
+				return Q.when(promise);
+		}).then( function(result) {		
+		     res.status(200).json( result.records.map((record)=>{return record.get("album").properties}) );
+		}).catch(function(err){
+		  	res.status(500).send(""+err);
+		}).finally(function(res){
+			session.close();
+		}).done();
 	}
 
 	var getSongsByAlbum = function (req, res) {
 		var session = neo4j.session();
-		return session.run( `MATCH (artist:Artist{name:{artistName}})
-							 MATCH (album:Album{name:{albumName}})<-[:Composed_by]-(artist) 
-							 MATCH (song:Song)<-[:Contains]-(album)
-							 RETURN song AS song ORDER BY song.track ASC`, 
-							 {artistName:req.params.artistName, albumName:req.params.albumName})
-		   .then( function(result) {
+		Q.fcall(function(){
+				var promise = session.run( `MATCH (artist:Artist{name:$artistName})
+											MATCH (album:Album{name:$albumName})<-[:Composed_by]-(artist) 
+											MATCH (song:Song)<-[:Contains]-(album)
+											RETURN song AS song ORDER BY song.disc ASC, song.track ASC`, 
+											{artistName:req.params.artistName, albumName:req.params.albumName});
+				return Q.when(promise);
+		}).then( function(result) {		
 		    res.status(200).json( result.records.map((record)=>{return record.get("song").properties}) );
-		    session.close();    	   
-		  })
-		  .catch(function(err){
-		  	res.status(500).send( err );
-		  	session.close();
-		  })
+		}).catch(function(err){
+		  	res.status(500).send(""+err);
+		}).finally(function(res){
+			session.close();
+		}).done();		  
 	}
 
 	var getSongById = function (req, res) {
 		var session = neo4j.session();
-		return session.run( `MATCH (s:Song) WHERE ID(s)={id} RETURN s`, {id:Number(req.params.id)})
-		   .then( function(result) {
-		    res.status(200).json( result.records[0].get("s").properties );	
-		    session.close();    	   
-		  })
-		  .catch(function(err){
-		  	res.status(500).send( err );
-		  	session.close();
-		  })
+		Q.fcall(function(){
+				var promise = session.run( `MATCH (s:Song) WHERE ID(s)=$id RETURN s`,
+										 {id:Number(req.params.id)});
+				return Q.when(promise);
+		}).then( function(result) {		
+		    res.status(200).json( result.records[0].get("s").properties );
+		}).catch(function(err){
+		  	res.status(500).send(""+err);
+		}).finally(function(res){
+			session.close();
+		}).done();
 	}
+
 	module.exports = {
 		indexPath: indexPath,
-		getArtists: getArtists,
+		getAllArtists: getAllArtists,
+		getFilteredArtists:getFilteredArtists,
 		getAlbumsByArtist: getAlbumsByArtist,
 		getSongsByAlbum: getSongsByAlbum,
 		getSongById: getSongById
