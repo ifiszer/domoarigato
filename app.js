@@ -11,7 +11,7 @@ app.post('/music/indexPath', [music.indexPath]);
 
 app.get('/music/artist/', [music.getAllArtists]);
 
-app.get('/music/artist/(:artistFilter)?', [music.getFilteredArtists]);
+app.get('/music/artist/(:artistFilter)', [music.getFilteredArtists]);
 
 app.get('/music/artist/:artistName/album', [music.getAlbumsByArtist]);	
 
