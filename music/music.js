@@ -11,16 +11,16 @@ var neo4j = require('../neo4j/Neo4JManager'),
 									return {"query":Query.indexPathQuery,"params":file};
 								});
 			return neo4j.executeTransactions(transactions);
-		}).then(function(result) {		
+		}).then(function(result) {
 		    res.status(200).json(result);
 		}).catch(function(err){
 		  	res.status(500).send(err);
 		})
-	}	
+	}
 
 	var getAllArtists = function (req, res) {
 		neo4j.query(Query.getAllArtistsQuery)
-		.then(function(result) {		
+		.then(function(result) {
 		    res.status(200).json(result);
 		}).catch(function(err){
 		  	res.status(500).send(err);
@@ -30,7 +30,7 @@ var neo4j = require('../neo4j/Neo4JManager'),
 	var getFilteredArtists = function (req, res) {
 		neo4j.query(Query.getFilteredArtistsQuery,
 			   {artistFilter:req.params.artistFilter})
-		.then(function(result) {		
+		.then(function(result) {
 		    res.status(200).json(result);
 		}).catch(function(err){
 		  	res.status(500).send(err);
@@ -40,22 +40,22 @@ var neo4j = require('../neo4j/Neo4JManager'),
 	var getAlbumsByArtist = function (req, res) {
 		neo4j.query(Query.getAlbumsByArtistQuery,
 			   {artistName:req.params.artistName})
-		.then(function(result) {		
+		.then(function(result) {
 		    res.status(200).json(result);
 		}).catch(function(err){
 		  	res.status(500).send(err);
 		})
 	}
 
-	var getSongsByAlbum = function (req, res) {		
-		neo4j.query(Query.getSongsByAlbumQuery, 
+	var getSongsByAlbum = function (req, res) {
+		neo4j.query(Query.getSongsByAlbumQuery,
 			   {artistName:req.params.artistName, albumName:req.params.albumName})
-		.then(function(result) {		
+		.then(function(result) {
 		    res.status(200).json(result);
 		}).catch(function(err){
 		  	res.status(500).send(err);
 		})
-	}	
+	}
 
 	module.exports = {
 		indexPath: indexPath,

@@ -15,7 +15,7 @@ var neo4jDriver = require('neo4j-driver').v1,
 			var promise = session.run(query, params);
 			return Q.when(promise);
 		}).then(function(result) {
-			return result.records.map((record)=>{return record.get("item").properties});		
+			return result.records.map((record)=>{return record.get("item").properties});
 		}).finally(function(res){
 			session.close();
 		});
@@ -37,7 +37,7 @@ var neo4jDriver = require('neo4j-driver').v1,
 		}).finally(function(res){
 			session.close();
 		})
-	}	
+	}
 
 	module.exports = {
 		query: query,
