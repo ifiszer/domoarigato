@@ -22,6 +22,10 @@ app.get('/bluetooth/device/:uuid/service/:suuid/characteristic/?', [bluetooth.ch
 app.get('/bluetooth/device/:uuid/service/:suuid/characteristic/:cuuid/?', [bluetooth.characteristicInfo]);
 app.get('/bluetooth/device/:uuid/service/:suuid/characteristic/:cuuid/read', [bluetooth.characteristicRead]);
 app.post('/bluetooth/device/:uuid/service/:suuid/characteristic/:cuuid/write', [bluetooth.characteristicWrite]);
+app.post('/bluetooth/device/:uuid/service/:suuid/characteristic/:cuuid/writeWithoutResponse', [bluetooth.characteristicWriteWithoutResponse]);
+app.get('/bluetooth/device/:uuid/handle/:handle/read', [bluetooth.handleRead]);
+app.post('/bluetooth/device/:uuid/handle/:handle/write', [bluetooth.handleWrite]);
+app.post('/bluetooth/device/:uuid/handle/:handle/writeWithoutResponse', [bluetooth.handleWriteWithoutResponse]);
 
 //Server start
 app.listen(80, function () {

@@ -140,6 +140,65 @@ var _ = require('underscore'),
 		})	
 	}
 
+	var characteristicWriteWithoutResponse = function (req, res) {
+		var result = bt.connect(req.params.uuid)
+		.then(bt.service)
+		.then(function(services) {
+			return services[req.params.suuid];		    
+		}).then(bt.characteristic)
+		.then(function(characteristics) {
+			var characteristic = characteristics[req.params.cuuid];
+			return bt.characteristicWriteWithoutResponse(characteristic, req.body.value);		    
+		})
+		.then(function(result) {
+		    res.status(200).json(result);
+		}).catch(function(err){
+			console.log(err);
+		  	res.status(500).send(err);
+		}).finally(function(res){
+		  	bt.disconnect(req.params.uuid)
+		})	
+	}
+
+	var handleRead = function (req, res) {
+		var result = bt.connect(req.params.uuid)
+		.then(function(peripheral) {
+			return bt.handleRead(peripheral, req.params.handle);		    
+		}).then(function(result) {
+		    res.status(200).json(result);
+		}).catch(function(err){
+		  	res.status(500).send(err);
+		}).finally(function(res){
+		  	bt.disconnect(req.params.uuid)
+		})	
+	}
+
+	var handleWrite = function (req, res) {
+		var result = bt.connect(req.params.uuid)
+		.then(function(peripheral) {
+			return bt.handleWrite(peripheral, req.params.handle, req.body.value);		    
+		}).then(function(result) {
+		    res.status(200).json(result);
+		}).catch(function(err){
+		  	res.status(500).send(err);
+		}).finally(function(res){
+		  	bt.disconnect(req.params.uuid)
+		})	
+	}
+
+	var handleWriteWithoutResponse = function (req, res) {
+		var result = bt.connect(req.params.uuid)
+		.then(function(peripheral) {
+			return bt.handleWriteWithoutResponse(peripheral, req.params.handle, req.body.value);		    
+		}).then(function(result) {
+		    res.status(200).json(result);
+		}).catch(function(err){
+		  	res.status(500).send(err);
+		}).finally(function(res){
+		  	bt.disconnect(req.params.uuid)
+		})	
+	}
+
 	module.exports = {
 		peripheral: peripheral,
 		peripheralInfo: peripheralInfo,
@@ -148,6 +207,10 @@ var _ = require('underscore'),
 		characteristic:characteristic,
 		characteristicInfo:characteristicInfo,
 		characteristicRead:characteristicRead,
-		characteristicWrite:characteristicWrite
+		characteristicWrite:characteristicWrite,
+		characteristicWriteWithoutResponse:characteristicWriteWithoutResponse,
+		handleRead:handleRead,
+		handleWrite:handleWrite,
+		handleWriteWithoutResponse:handleWriteWithoutResponse
 	};
 }());

@@ -16,6 +16,15 @@ noble.on('discover', function(peripheral) {
   peripherals[peripheral.uuid]=peripheral;
 });
 
+var connect = function(uuid){
+  var peripheral = peripherals[uuid];
+  var deferred = Q.defer();
+  peripheral.connect(function(){
+    deferred.resolve(peripheral);
+  });
+  return deferred.promise;
+}
+
 var service = function(peripheral){
   var deferred = Q.defer();  
   peripheral.discoverServices(null, function(error, services) {
@@ -48,36 +57,26 @@ var characteristic = function(service){
 
 var characteristicRead = function(characteristic){
   var deferred = Q.defer();  
-  if(response && characteristic.properties.indexOf("read")===-1){
+  if(characteristic.properties.indexOf("read")===-1){
     deferred.reject("read not available")
   }
   characteristic.read(function(error, data) {
     if(error){
       deferred.reject(error);
     }    
-    deferred.resolve(data.toString('utf8'));
+    deferred.resolve(data);
   })    
   return deferred.promise;
 }
 
 var characteristicWrite = function(characteristic, value){
-  return characteristicWrite (characteristic, value, false);
-}
-
-var characteristicWriteWithoutResponse = function(characteristic, value, response){
-  return characteristicWrite (characteristic, value, true);
-}
-
-var characteristicWrite = function(characteristic, value, response){
   var deferred = Q.defer();
 
-  if(response && characteristic.properties.indexOf("write")===-1){
+  if(characteristic.properties.indexOf("write")===-1){
     deferred.reject("write not available")
-  }else if(!response && characteristic.properties.indexOf("writeWithoutResponse")===-1){
-    deferred.reject("writeWithoutResponse not available")
   }
 
-  characteristic.write(new Buffer(value), response, function(error) {
+  characteristic.write(new Buffer(value), false, function(error) {
     if(error){
       deferred.reject(error);
     }    
@@ -86,12 +85,53 @@ var characteristicWrite = function(characteristic, value, response){
   return deferred.promise;
 }
 
-var connect = function(uuid){
-  var peripheral = peripherals[uuid];
+var characteristicWriteWithoutResponse = function(characteristic, value){
   var deferred = Q.defer();
-  peripheral.connect(function(){
-    deferred.resolve(peripheral);
-  });
+
+  if(characteristic.properties.indexOf("writeWithoutResponse")===-1){
+    deferred.reject("writeWithoutResponse not available")
+  }
+
+  characteristic.write(new Buffer(value), true, function(error) {
+    if(error){
+      deferred.reject(error);
+    }
+    deferred.resolve();
+  })    
+  return deferred.promise;
+}
+
+var handleRead = function(peripheral, handle){
+  var deferred = Q.defer();  
+  peripheral.readHandle(handle, function(error, data) {
+    if(error){
+      deferred.reject(error);
+    }    
+    console.log(data);
+    deferred.resolve(data);
+  })    
+  return deferred.promise;
+}
+
+var handleWrite = function(peripheral, handle, value){
+  var deferred = Q.defer();
+  peripheral.writeHandle(handle, new Buffer(value), false, function(error) {
+    if(error){
+      deferred.reject(error);
+    }    
+    deferred.resolve();
+  })    
+  return deferred.promise;
+}
+
+var handleWriteWithoutResponse = function(peripheral, handle, value){
+  var deferred = Q.defer();
+  peripheral.writeHandle(handle, new Buffer(value), true, function(error) {
+    if(error){
+      deferred.reject(error);
+    }    
+    deferred.resolve();
+  })    
   return deferred.promise;
 }
 
@@ -105,11 +145,15 @@ var disconnect = function(uuid){
 }
 
 var self = module.exports = {
+  connect:connect,
   peripherals: peripherals,
   service: service,
   characteristic: characteristic,
   characteristicRead : characteristicRead,
   characteristicWrite : characteristicWrite,
-  connect:connect,
+  characteristicWriteWithoutResponse : characteristicWriteWithoutResponse,
+  handleRead:handleRead,
+  handleWrite:handleWrite,
+  handleWriteWithoutResponse:handleWriteWithoutResponse,
   disconnect:disconnect
 };
