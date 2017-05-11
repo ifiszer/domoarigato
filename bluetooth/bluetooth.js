@@ -3,7 +3,7 @@ var _ = require('underscore'),
 	bt = require('./bluetoothManager');
 
 (function () {
-	var scan = function (req, res) {
+	var peripheral = function (req, res) {
 		var result = _.map(bt.peripherals, function(peripheral, index, list){
 									return {"uuid":peripheral.uuid,"name":peripheral.advertisement.localName,"state":peripheral.state};
 								});
@@ -41,9 +41,7 @@ var _ = require('underscore'),
 		var result = bt.connect(req.params.uuid)
 		.then(bt.service)
 		.then(function(services) {
-			var service = _.find(services, function(service){ 
-									return service.uuid === req.params.suuid; 
-								});
+			var service = services[req.params.suuid];
 		    return {"uuid":service.uuid,
 		    		"name":service.name,
 		    		"type":service.type,
@@ -57,30 +55,99 @@ var _ = require('underscore'),
 		})	
 	}
 
-	var connect = function (req, res) {
-		bt.connect(req.params.uuid)
-		.then(function(result) {
-		    res.status(200).json("Connected to "+result.advertisement.localName);
+	var characteristic = function (req, res) {
+		var result = bt.connect(req.params.uuid)
+		.then(bt.service)
+		.then(function(services) {
+			return services[req.params.suuid];		    
+		}).then(bt.characteristic)
+		.then(function(characteristics) {
+		    return _.map(characteristics, function(characteristic, index, list){
+									return {"uuid":characteristic.uuid,
+								    		"name":characteristic.name,
+								    		"type":characteristic.type,
+								    		"properties":characteristic.properties,
+								    		"descriptors":characteristic.descriptors};
+								});
+		}).then(function(result) {
+		    res.status(200).json(result);
 		}).catch(function(err){
 		  	res.status(500).send(err);
-		})
-	}	
+		}).finally(function(res){
+		  	bt.disconnect(req.params.uuid)
+		})	
+	}
 
-	var disconnect = function (req, res) {
-		bt.disconnect(req.params.uuid)
-		.then(function(result) {
-		    res.status(200).json("Disconnected from "+result.advertisement.localName);
+	var characteristicInfo = function (req, res) {
+		var result = bt.connect(req.params.uuid)
+		.then(bt.service)
+		.then(function(services) {
+			return services[req.params.suuid];		    
+		}).then(bt.characteristic)
+		.then(function(characteristics) {
+			return characteristics[req.params.cuuid];		    
+		})
+		.then(function(characteristics) {
+		   return {"uuid":characteristic.uuid,
+		    		"name":characteristic.name,
+		    		"type":characteristic.type,
+		    		"properties":characteristic.properties,
+		    		"descriptors":characteristic.descriptors};
+		}).then(function(result) {
+		    res.status(200).json(result);
 		}).catch(function(err){
 		  	res.status(500).send(err);
+		}).finally(function(res){
+		  	bt.disconnect(req.params.uuid)
+		})	
+	}
+
+	var characteristicRead = function (req, res) {
+		var result = bt.connect(req.params.uuid)
+		.then(bt.service)
+		.then(function(services) {
+			return services[req.params.suuid];		    
+		}).then(bt.characteristic)
+		.then(function(characteristics) {
+			return characteristics[req.params.cuuid];		    
 		})
-	}	
+		.then(bt.characteristicRead)
+		.then(function(result) {
+		    res.status(200).json(result);
+		}).catch(function(err){
+		  	res.status(500).send(err);
+		}).finally(function(res){
+		  	bt.disconnect(req.params.uuid)
+		})	
+	}
+
+	var characteristicWrite = function (req, res) {
+		var result = bt.connect(req.params.uuid)
+		.then(bt.service)
+		.then(function(services) {
+			return services[req.params.suuid];		    
+		}).then(bt.characteristic)
+		.then(function(characteristics) {
+			var characteristic = characteristics[req.params.cuuid];
+			return bt.characteristicWrite(characteristic, req.body.value);		    
+		})
+		.then(function(result) {
+		    res.status(200).json(result);
+		}).catch(function(err){
+		  	res.status(500).send(err);
+		}).finally(function(res){
+		  	bt.disconnect(req.params.uuid)
+		})	
+	}
 
 	module.exports = {
-		scan: scan,
+		peripheral: peripheral,
 		peripheralInfo: peripheralInfo,
 		service: service,
 		serviceInfo:serviceInfo,
-		connect:connect,
-		disconnect:disconnect
+		characteristic:characteristic,
+		characteristicInfo:characteristicInfo,
+		characteristicRead:characteristicRead,
+		characteristicWrite:characteristicWrite
 	};
 }());

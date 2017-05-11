@@ -14,12 +14,14 @@ app.get('/music/artist/:artistName/album/:albumName/song', [music.getSongsByAlbu
 
 //Bluetooth
 var bluetooth = require('./bluetooth/bluetooth.js');
-app.get('/bluetooth/devices/?', [bluetooth.scan]);
-app.get('/bluetooth/devices/:uuid/?', [bluetooth.peripheralInfo]);
-app.get('/bluetooth/devices/:uuid/service/?', [bluetooth.service]);
-app.get('/bluetooth/devices/:uuid/service/:suuid/?', [bluetooth.serviceInfo]);
-app.get('/bluetooth/devices/:uuid/connect/?', [bluetooth.connect]);
-app.get('/bluetooth/devices/:uuid/disconnect/?', [bluetooth.disconnect]);
+app.get('/bluetooth/device/?', [bluetooth.peripheral]);
+app.get('/bluetooth/device/:uuid/?', [bluetooth.peripheralInfo]);
+app.get('/bluetooth/device/:uuid/service/?', [bluetooth.service]);
+app.get('/bluetooth/device/:uuid/service/:suuid/?', [bluetooth.serviceInfo]);
+app.get('/bluetooth/device/:uuid/service/:suuid/characteristic/?', [bluetooth.characteristic]);
+app.get('/bluetooth/device/:uuid/service/:suuid/characteristic/:cuuid/?', [bluetooth.characteristicInfo]);
+app.get('/bluetooth/device/:uuid/service/:suuid/characteristic/:cuuid/read', [bluetooth.characteristicRead]);
+app.post('/bluetooth/device/:uuid/service/:suuid/characteristic/:cuuid/write', [bluetooth.characteristicWrite]);
 
 //Server start
 app.listen(80, function () {
