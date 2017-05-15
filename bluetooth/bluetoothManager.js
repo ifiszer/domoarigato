@@ -107,7 +107,6 @@ var handleRead = function(peripheral, handle){
     if(error){
       deferred.reject(error);
     }    
-    console.log(data);
     deferred.resolve(data);
   })    
   return deferred.promise;
