@@ -5,7 +5,7 @@ var _ = require('underscore'),
 (function () {
 	var peripheral = function (req, res) {
 		var result = _.map(bt.peripherals, function(peripheral, index, list){
-									return {"uuid":peripheral.uuid,"name":peripheral.advertisement.localName,"state":peripheral.state};
+									return {"uuid":peripheral.uuid,"manufacturer":peripheral.advertisement.manufacturerData.toString("utf8"),"name":peripheral.advertisement.localName,"state":peripheral.state};
 								});
 		res.status(200).json(result);		
 	}	
@@ -16,6 +16,7 @@ var _ = require('underscore'),
 					  "address":peripheral.address,
 					  "addressType":peripheral.addressType,
 					  "connectable":peripheral.connectable,
+					  "manufacturer":peripheral.advertisement.manufacturerData.toString("utf8"),
 					  "name":peripheral.advertisement.localName,
 					  "state":peripheral.state}
 		res.status(200).json(result);		
