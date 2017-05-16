@@ -7,7 +7,7 @@ var peripherals = {};
 noble.on('stateChange', function(state) {
   if (state === 'poweredOn') {
     noble.startScanning();
-  } else {
+  } else {    
     noble.stopScanning();
   }
 });
@@ -19,14 +19,23 @@ noble.on('discover', function(peripheral) {
 var connect = function(uuid){
   var peripheral = peripherals[uuid];
   var deferred = Q.defer();
-  peripheral.connect(function(){
+  if(peripheral.state==="connected"){
+    console.log(peripheral.uuid + " already connected");
+    deferred.resolve(peripheral);
+  }
+  peripheral.connect(function(error){
+    if(error){
+      console.log(peripheral.uuid + " failed to connect");
+      deferred.reject(error);
+    }
+    console.log(peripheral.uuid + " connected succesfully");
     deferred.resolve(peripheral);
   });
   return deferred.promise;
 }
 
 var service = function(peripheral){
-  var deferred = Q.defer();  
+  var deferred = Q.defer();
   peripheral.discoverServices(null, function(error, services) {
     if(error){
       deferred.reject(error);
@@ -137,7 +146,16 @@ var handleWriteWithoutResponse = function(peripheral, handle, value){
 var disconnect = function(uuid){
   var peripheral = peripherals[uuid];
   var deferred = Q.defer();
-  peripheral.disconnect(function(){
+  if(peripheral.state!="connected"){
+     console.log(peripheral.uuid + " is not connected");
+    deferred.resolve(peripheral);
+  }
+  peripheral.disconnect(function(error){
+    if(error){      
+      console.log(peripheral.uuid + " failed to disconnect");
+      deferred.reject(error);
+    }    
+    console.log(peripheral.uuid + " disconnected succesfully");
     deferred.resolve(peripheral);
   });
   return deferred.promise;

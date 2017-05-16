@@ -180,6 +180,7 @@ var _ = require('underscore'),
 		}).then(function(result) {
 		    res.status(200).json(result);
 		}).catch(function(err){
+			console.log(err);
 		  	res.status(500).send(err);
 		}).finally(function(res){
 		  	bt.disconnect(req.params.uuid)
