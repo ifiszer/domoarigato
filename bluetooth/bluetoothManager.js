@@ -20,15 +20,12 @@ var connect = function(uuid){
   var peripheral = peripherals[uuid];
   var deferred = Q.defer();
   if(peripheral.state==="connected"){
-    console.log(peripheral.uuid + " already connected");
     deferred.resolve(peripheral);
   }
   peripheral.connect(function(error){
     if(error){
-      console.log(peripheral.uuid + " failed to connect");
       deferred.reject(error);
     }
-    console.log(peripheral.uuid + " connected succesfully");
     deferred.resolve(peripheral);
   });
   return deferred.promise;
@@ -147,15 +144,12 @@ var disconnect = function(uuid){
   var peripheral = peripherals[uuid];
   var deferred = Q.defer();
   if(peripheral.state!="connected"){
-     console.log(peripheral.uuid + " is not connected");
     deferred.resolve(peripheral);
   }
   peripheral.disconnect(function(error){
     if(error){      
-      console.log(peripheral.uuid + " failed to disconnect");
       deferred.reject(error);
     }    
-    console.log(peripheral.uuid + " disconnected succesfully");
     deferred.resolve(peripheral);
   });
   return deferred.promise;
