@@ -88,7 +88,7 @@ var _ = require('underscore'),
 		.then(function(characteristics) {
 			return characteristics[req.params.cuuid];		    
 		})
-		.then(function(characteristics) {
+		.then(function(characteristic) {
 		   return {"uuid":characteristic.uuid,
 		    		"name":characteristic.name,
 		    		"type":characteristic.type,
